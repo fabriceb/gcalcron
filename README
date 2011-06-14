@@ -1,0 +1,22 @@
+GCalCron2
+=========
+
+The goal of GCalCron is to use Google Calendar as a GUI to your crontab. It enable you to have at the same time:
+ - clean and reliable scheduling thanks to the use of Unix native tools
+ - a great user interface for quick and easy scheduling and re-scheduling using Google Calendar, available on all platforms, web and mobile.
+
+A common use of this tool is to administer a home automation server. Using GCalCron2, changing your wake-up time before going to bed is as easy as changing the time of the associated Google Calendar event
+
+
+History
+=======
+
+GCalCron2 is a complete rewrite of GCalCron.
+
+
+Install
+=======
+
+On Ubuntu 10.10 and later :
+
+sudo apt-get install python-gdata
