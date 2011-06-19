@@ -9,6 +9,7 @@
 
 import gdata.calendar.service
 import os
+import stat
 import json
 import datetime
 import time
@@ -175,7 +176,7 @@ class GCalCron2:
   """
   
   settings = None
-  settings_file = os.getenv('HOME') + '/' + '.gcalcron3'
+  settings_file = os.getenv('HOME') + '/' + '.gcalcron2'
 
   def __init__(self, load_settings=True):
     if load_settings:
@@ -189,6 +190,8 @@ class GCalCron2:
   def save_settings(self):
     with open(self.settings_file, 'w') as f:
       json.dump(self.settings, f, indent=2)
+    # protect the settings fie, since it contains the OAuth login token
+    os.chmod(self.settings_file, stat.S_IRUSR + stat.S_IWUSR)
 
   def init_settings(self, email, password, cal_id):
     gcal_adapter = GCalAdapter()
