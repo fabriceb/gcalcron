@@ -1,8 +1,8 @@
 # GCalCron2 #
 
 The goal of GCalCron is to use Google Calendar as a GUI to your crontab. It enable you to have at the same time:
- - clean and reliable scheduling thanks to the use of the Unix tool: at
- - a great user interface for quick and easy scheduling and re-scheduling using Google Calendar, available on all platforms, web and mobile.
+ * clean and reliable scheduling thanks to the use of the Unix tool: at
+ * a great user interface for quick and easy scheduling and re-scheduling using Google Calendar, available on all platforms, web and mobile.
 
 A common use of this tool is to administer a home automation server. Using GCalCron2, changing your wake-up time before going to bed is as easy as changing the time of the associated Google Calendar event
 
@@ -42,7 +42,7 @@ Follow these instructions to find your Calendar ID:
 
 This has to be done only once, the OAuth login token is then stored in your settings file, by default .gcalcron2 in your HOME directory
 
-'''Be aware that this OAuth login token gives read and write access to all your Google calendars! Please keep it in a safe place and do not use this program on a machine on which you are not the only root user!'''
+*Be aware that this OAuth login token gives read and write access to all your Google calendars! Please keep it in a safe place and do not use this program on a machine on which you are not the only root user!*
 
 Add "python gcalcron2.py" to your cron. Choose the frequency that suits your needs, it will only impact the delay between a change in Google Calendar and it being taken into account on your system.
 
