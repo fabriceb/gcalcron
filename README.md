@@ -1,6 +1,7 @@
 # GCalCron2 #
 
 The goal of GCalCron is to use Google Calendar as a GUI to your crontab. It enable you to have at the same time:
+
  * clean and reliable scheduling thanks to the use of the Unix tool: at
  * a great user interface for quick and easy scheduling and re-scheduling using Google Calendar, available on all platforms, web and mobile.
 
@@ -9,7 +10,7 @@ A common use of this tool is to administer a home automation server. Using GCalC
 
 ## History ##
 
-GCalCron2 is a complete rewrite of GCalCron by Patrick Spear. See http://www.pfspear.net/projects/gcalcron for hist first version
+GCalCron2 is a complete rewrite of GCalCron by Patrick Spear. See http://www.pfspear.net/projects/gcalcron for his first version
 
 
 ## Features ##
@@ -51,3 +52,30 @@ Add "python gcalcron2.py" to your cron. Choose the frequency that suits your nee
 
  * In your Google Calendar, create a single or recurrent event and list one command per line in the description
  * Add "+10: " or "-5: " at the beginning of the line to add an offset of +10 minutes or -5 minutes to the command
+ 
+ 
+## Special section for LaCie Network Space 2 hackers ##
+
+The LaCie Network Space 2 http://lacie.nas-central.org/wiki/Category:Network_Space_2 is a great-looking silent NAS. And most importantly it is easy to enable ssh, so it is a perfect choice for a discrete home automation solution.
+
+I wrote GCalCron2 for such a device, here are the additional steps I needed to make it work:
+
+ * Enable ssh on the machine: http://lacie.nas-central.org/wiki/Category:Network_Space_2#Enabling_SSH_with_disassembling
+ * Install Ipkg, a lightweight package management system: http://forum.nas-central.org/viewtopic.php?f=236&t=2348 cs08q1armel worked perfectly for me
+ 
+        cd /opt
+        feed=http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/cross/stable
+        feednative=http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/native/unstable
+        ipk_name=`wget -qO- $feed/Packages | awk '/^Filename: ipkg-opt/ {print $2}'`
+        wget $feed/$ipk_name
+        tar -xOvzf $ipk_name ./data.tar.gz | tar -C / -xzvf -
+        mkdir -p /opt/etc/ipkg
+        echo "src cross $feed" > /opt/etc/ipkg/feeds.conf
+        echo "src native $feednative" >> /opt/etc/ipkg/feeds.conf
+        export PATH=/opt/bin:$PATH
+        ipkg update
+        
+ * Download the at package http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/cross/stable/at_3.1.8-5_arm.ipk
+ * install it: ipkg at_3.1.8-5_arm.ipk
+ 
+ 
