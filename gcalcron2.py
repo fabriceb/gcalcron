@@ -82,6 +82,7 @@ class GCalAdapter:
     query.start_min = local_to_utc(start_min).isoformat()
     query.start_max = local_to_utc(start_max).isoformat()
     query.singleevents = 'true'
+    query.ctz = 'UTC'
     query.max_results = 1000
     if updated_min:
       query.updated_min = local_to_utc(updated_min).isoformat()
@@ -120,7 +121,7 @@ class GCalAdapter:
     for i, event in zip(xrange(len(entries)), entries):
       event_time = utc_to_local(iso_to_datetime(event.when[0].start_time))
       event_id = event.uid.value + '_' + event.when[0].start_time
-      if DEBUG: print event.updated.text, ': ', event.title.text, event_time, '=>', event.content.text
+      if DEBUG: print event.updated.text, ': ', event.title.text, event_time, ' (', event.when[0].start_time, ') ', '=>', event.content.text
       if event.content.text:
         commands = self.parse_commands(event.content.text, event_time)
         events.append({
@@ -238,8 +239,10 @@ class GCalCron2:
     for event in events:
       if 'commands' in event:
         for command in event['commands']:
+          if DEBUG: print "at "+ datetime_to_at(command['exec_time']) 
           p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
           (_, output) = p.communicate(command['command'])
+          if DEBUG: print "  " + output
           job_id = re.compile('job (\d+) at').search(output).group(1)
           if event['uid'] in self.settings['jobs']:
             self.settings['jobs'][event['uid']]['ids'].append(job_id)
@@ -275,9 +278,9 @@ def iso_to_datetime(iso):
 def datetime_to_at(dt):
   """
   >>> datetime_to_at(datetime.datetime(2011, 6, 18, 12, 0))
-  '12:00 Jun 18 2011'
+  '12:00 Jun 18'
   """
-  return dt.strftime('%H:%M %h %d %Y')
+  return dt.strftime('%H:%M %h %d')
 
 
 if __name__ == '__main__':
