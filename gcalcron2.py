@@ -120,8 +120,8 @@ class GCalAdapter:
     events = []
     for i, event in zip(xrange(len(entries)), entries):
       event_time = utc_to_local(iso_to_datetime(event.when[0].start_time))
-      event_id = event.uid.value + '_' + event.when[0].start_time
-      if DEBUG: print event.updated.text, ': ', event.title.text, event_time, ' (', event.when[0].start_time, ') ', '=>', event.content.text
+      event_id = event.id.text
+      if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, event_time, ' (', event.when[0].start_time, ') ', '=>', event.content.text
       if event.content.text:
         commands = self.parse_commands(event.content.text, event_time)
         events.append({
@@ -252,10 +252,12 @@ class GCalCron2:
               'ids': [job_id, ]
             }
 
+    
     # clean the jobs in the file
-    for event_uid in self.settings['jobs']:
+    event_uids = self.settings['jobs'].keys()
+    for event_uid in event_uids:
       if datetime.datetime.strptime(self.settings['jobs'][event_uid]['date'], '%Y-%m-%d') <= datetime.datetime.now() - datetime.timedelta(days=1):
-        del self.settings['jobs'][event['uid']]
+        del self.settings['jobs'][event_uid]
 
     self.settings['last_sync'] = str(last_sync)
     self.save_settings()
