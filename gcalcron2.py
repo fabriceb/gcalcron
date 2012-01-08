@@ -227,14 +227,14 @@ class GCalCron2:
     (events, last_sync) = gcal_adapter.get_events(last_sync, num_days)
 
     # if event was modified or cancelled, erase existing jobs
-    job_ids = []
+    removed_job_ids = []
     for event in events:  
       if event['uid'] in self.settings['jobs']:
-        job_ids += self.settings['jobs'][event['uid']]['ids']
+        removed_job_ids += self.settings['jobs'][event['uid']]['ids']
         del self.settings['jobs'][event['uid']]
-    if len(job_ids) > 0:
-      if DEBUG: print ' '.join(['at', '-d'] + job_ids)
-      p = subprocess.Popen(['at', '-d'] + job_ids)
+    if len(removed_job_ids) > 0:
+      if DEBUG: print ' '.join(['at', '-d'] + removed_job_ids)
+      subprocess.Popen(['at', '-d'] + removed_job_ids)
 
     for event in events:
       if 'commands' in event:
