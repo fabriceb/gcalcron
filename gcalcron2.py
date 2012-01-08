@@ -129,10 +129,11 @@ class GCalAdapter:
         })
       elif event.content.text:
         commands = self.parse_commands(event.content.text, event_time)
-        events.append({
-            'uid': event_id,
-            'commands': commands
-          })
+        if commands:
+          events.append({
+              'uid': event_id,
+              'commands': commands
+            })
 
     if DEBUG: print events
 
@@ -157,10 +158,13 @@ class GCalAdapter:
       if offset_match:
         exec_time += datetime.timedelta(minutes=int(offset_match.group(1)))
         command = offset_match.group(2)
-      commands.append({
-          'command': command,
-          'exec_time': exec_time
-        })
+
+      if exec_time >= datetime.datetime.now():
+        commands.append({
+            'command': command,
+            'exec_time': exec_time
+          })
+      elif DEBUG: print 'Ignoring command that was scheduled for the past'
 
     return commands
 
@@ -242,14 +246,16 @@ class GCalCron2:
           p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
           (_, output) = p.communicate(command['command'])
           if DEBUG: print "  " + output
-          job_id = re.compile('job (\d+) at').search(output).group(1)
-          if event['uid'] in self.settings['jobs']:
-            self.settings['jobs'][event['uid']]['ids'].append(job_id)
-          else:
-            self.settings['jobs'][event['uid']] = {
-              'date': command['exec_time'].strftime('%Y-%m-%d'),
-              'ids': [job_id, ]
-            }
+          job_id_match = re.compile('job (\d+) at').search(output)
+          if job_id_match:
+            job_id = job_id_match.group(1)
+            if event['uid'] in self.settings['jobs']:
+              self.settings['jobs'][event['uid']]['ids'].append(job_id)
+            else:
+              self.settings['jobs'][event['uid']] = {
+                'date': command['exec_time'].strftime('%Y-%m-%d'),
+                'ids': [job_id, ]
+              }
 
     
     # clean the jobs in the file
