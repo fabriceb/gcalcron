@@ -12,6 +12,7 @@ import os
 import stat
 import json
 import datetime
+import dateutil.parser
 import time
 import subprocess
 import re
@@ -119,7 +120,7 @@ class GCalAdapter:
 
     events = []
     for i, event in zip(xrange(len(entries)), entries):
-      event_time = utc_to_local(iso_to_datetime(event.when[0].start_time))
+      event_time = utc_to_local(dateutil.parser.parse(event.when[0].start_time)).replace (tzinfo = None)
       event_id = event.id.text
       if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, event_time, ' (', event.when[0].start_time, ') ', '=>', event.content.text
       if event.event_status.value == 'CANCELED':
@@ -273,13 +274,6 @@ def local_to_utc(dt):
 
 def utc_to_local(dt):
   return dt - datetime.timedelta(seconds=time.altzone)
-
-def iso_to_datetime(iso):
-  """
-  >>> iso_to_datetime('2011-06-18T12:00:00')
-  datetime.datetime(2011, 6, 18, 12, 0)
-  """
-  return datetime.datetime.strptime(iso[:16], '%Y-%m-%dT%H:%M')
 
 
 def datetime_to_at(dt):
