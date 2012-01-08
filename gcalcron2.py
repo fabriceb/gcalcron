@@ -70,7 +70,7 @@ class GCalAdapter:
     >>> g = GCalAdapter()
     >>> g.cal_id = 'login@gmail.com'
     >>> g.get_query(datetime.datetime(2011, 6, 19, 14, 0), datetime.datetime(2011, 6, 26, 14, 0), datetime.datetime(2011, 6, 18, 14, 0))
-    {'start-max': '2011-06-26T12:00:00', 'max-results': '1000', 'singleevents': 'true', 'updated-min': '2011-06-18T12:00:00', 'start-min': '2011-06-19T12:00:00'}
+    {'start-max': '2011-06-26T06:00:00', 'max-results': '1000', 'singleevents': 'true', 'ctz': 'UTC', 'updated-min': '2011-06-18T06:00:00', 'start-min': '2011-06-19T06:00:00'}
     
     @author Fabrice Bernhard
     @since 2011-06-19
