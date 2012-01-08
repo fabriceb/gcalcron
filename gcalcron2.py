@@ -170,12 +170,15 @@ class GCalAdapter:
           exec_time += datetime.timedelta(minutes=int(offset_match.group(2)))
         command = offset_match.group(3)
 
-      if exec_time >= datetime.datetime.now():
-        commands.append({
-            'command': command,
-            'exec_time': exec_time
-          })
-      elif DEBUG: print 'Ignoring command that was scheduled for the past'
+      command = command.strip()
+      if command:
+        if exec_time >= datetime.datetime.now():
+          commands.append({
+              'command': command,
+              'exec_time': exec_time
+            })
+        elif DEBUG: print 'Ignoring command that was scheduled for the past'
+      elif DEBUG: print 'Blank command'
 
     return commands
 
