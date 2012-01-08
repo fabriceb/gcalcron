@@ -122,18 +122,17 @@ class GCalAdapter:
       event_time = utc_to_local(iso_to_datetime(event.when[0].start_time))
       event_id = event.id.text
       if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, event_time, ' (', event.when[0].start_time, ') ', '=>', event.content.text
-      if event.content.text:
+      if event.event_status.value == 'CANCELED':
+        if DEBUG: print "CANCELLED", event_id
+        events.append({
+          'uid': event_id
+        })
+      elif event.content.text:
         commands = self.parse_commands(event.content.text, event_time)
         events.append({
             'uid': event_id,
             'commands': commands
           })
-
-      elif event.event_status.value == 'CANCELED':
-        if DEBUG: print "CANCELLED", event_id
-        events.append({
-          'uid': event_id
-        })
 
     if DEBUG: print events
 
