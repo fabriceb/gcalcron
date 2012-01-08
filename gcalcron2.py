@@ -16,7 +16,7 @@ import time
 import subprocess
 import re
 
-DEBUG = False
+DEBUG = os.environ.get('DEBUG')
 
 class GCalAdapter:
   """
