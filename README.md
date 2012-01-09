@@ -34,10 +34,10 @@ See http://www.pfspear.net/projects/gcalcron for his first version.
 
 ## Install ##
 
-GcalCron2 requires the `python-gdata` package:
+GcalCron2 depends on a few python libraries:
 
-* Install on Ubuntu, Debian, etc. : `sudo apt-get install python-gdata`
-* Install on Fedora, CentOS, etc. : `sudo yum install python-gdata`
+* Install on Ubuntu, Debian, etc. : `sudo apt-get install python-gdata python-dateutil`
+* Install on Fedora, CentOS, etc. : `sudo yum install python-gdata python-dateutil`
 
 Clone the GcalCron2 repository:
 
