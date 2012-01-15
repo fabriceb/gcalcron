@@ -14,6 +14,7 @@ import stat
 import json
 import datetime
 import dateutil.parser
+from dateutil.tz import gettz
 import time
 import subprocess
 import re
@@ -79,15 +80,15 @@ class GCalAdapter:
     @since 2011-06-19
     """
 
-    if DEBUG: print 'Setting up query: %s to %s modified after %s' % (start_min.isoformat() + '+01:00', start_max.isoformat() + '+01:00', updated_min)
-    
+    if DEBUG: print 'Setting up query: %s to %s modified after %s' % (start_min.isoformat(), start_max.isoformat(), updated_min)
+
     query = gdata.calendar.service.CalendarEventQuery(self.cal_id, 'private', 'full')
-    query.start_min = start_min.isoformat() + '+01:00'
-    query.start_max = start_max.isoformat() + '+01:00'
+    query.start_min = start_min.isoformat()
+    query.start_max = start_max.isoformat()
     query.singleevents = 'true'
     query.max_results = 1000
     if updated_min:
-      query.updated_min = updated_min.isoformat() + '+01:00'
+      query.updated_min = updated_min.isoformat()
 
     return query
 
@@ -100,11 +101,10 @@ class GCalAdapter:
     @author Fabrice Bernhard
     @since 2011-06-13
     """
-    
+
     queries = []
     entries = []
-    now = datetime.datetime.now()
-    now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second)
+    now = datetime.datetime.now(gettz())
     if last_sync:
       queries.append(self.get_query(now, last_sync + num_days, last_sync))
       queries.append(self.get_query(last_sync + num_days, now + num_days))
@@ -129,8 +129,8 @@ class GCalAdapter:
 
     events = []
     for i, event in zip(xrange(len(entries)), entries):
-      start_time = iso_to_datetime(dateutil.parser.parse(event.when[0].start_time)).replace (tzinfo = None)
-      end_time   = iso_to_datetime(dateutil.parser.parse(event.when[0].end_time)).replace (tzinfo = None)
+      start_time = dateutil.parser.parse(event.when[0].start_time).replace(tzinfo=None)
+      end_time   = dateutil.parser.parse(event.when[0].end_time).replace(tzinfo=None)
       event_id = event.id.text
       if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, start_time, ' -> ', end_time, ' (', event.when[0].start_time, ' -> ', event.when[0].end_time, ') ', '=>', event.content.text
       if event.event_status.value == 'CANCELED':
@@ -243,6 +243,15 @@ class GCalCron2:
       if datetime.datetime.strptime(job['date'], '%Y-%m-%d') <= datetime.datetime.now() - datetime.timedelta(days=1):
         del self.settings['jobs'][event_uid]
 
+  def reset_settings(self):
+    for event, job in self.settings['jobs'].items():
+      command = ['at', '-d'] + job['ids']
+      if DEBUG: print ' '.join(command)
+      subprocess.Popen(command)
+    self.settings['last_sync'] = None
+    self.settings['jobs'] = {}
+    self.save_settings()
+
 
   def unschedule_old_jobs(self, events):
     removed_job_ids = []
@@ -298,7 +307,7 @@ class GCalCron2:
 
     last_sync = None
     if self.settings['last_sync']:
-      last_sync = datetime.datetime.strptime(self.settings['last_sync'][:16], '%Y-%m-%d %H:%M')
+      last_sync = dateutil.parser.parse(self.settings['last_sync'])
 
     gcal_adapter = GCalAdapter(self.settings['google_calendar']['cal_id'], self.settings['google_calendar']['login_token'])
 
@@ -315,14 +324,6 @@ class GCalCron2:
 
     self.settings['last_sync'] = str(last_sync)
     self.save_settings()
-
-
-def iso_to_datetime(iso):
-  """
-  >>> iso_to_datetime('2011-06-18T12:00:00')
-  datetime.datetime(2011, 6, 18, 12, 0)
-  """
-  return datetime.datetime.strptime(iso[:16], '%Y-%m-%dT%H:%M')
 
 
 def datetime_to_at(dt):
@@ -350,4 +351,7 @@ if __name__ == '__main__':
   except IOError:
     init()
 
-  g.sync_gcal_to_cron()
+  if '--reset' in sys.argv:
+    g.reset_settings()
+  else:
+    g.sync_gcal_to_cron()
