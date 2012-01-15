@@ -109,11 +109,15 @@ I wrote GCalCron2 for such a device, here are the additional steps I needed to m
         export PATH=/opt/bin:$PATH
         ipkg update
 
- * Download the at package http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/cross/stable/at_3.1.8-5_arm.ipk
- * install it: ipkg at_3.1.8-5_arm.ipk
+ * Install the `at` package
 
-* install python-dateutil
- * wget http://labix.org/download/python-dateutil/python-dateutil-1.5.tar.gz
- * tar -xzvf python-dateutil-1.5.tar.gz
- * cd python-dateutil-1.5
- * python setup.py install
+  * wget http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/cross/stable/at_3.1.8-5_arm.ipk
+  * ipkg at_3.1.8-5_arm.ipk
+
+
+ * Install python-dateutil
+
+  * wget http://labix.org/download/python-dateutil/python-dateutil-1.5.tar.gz
+  * tar -xzvf python-dateutil-1.5.tar.gz
+  * cd python-dateutil-1.5
+  * python setup.py install

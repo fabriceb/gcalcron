@@ -105,11 +105,12 @@ class GCalAdapter:
     queries = []
     entries = []
     now = datetime.datetime.now(gettz())
+    end = now + num_days
     if last_sync:
       queries.append(self.get_query(now, last_sync + num_days, last_sync))
-      queries.append(self.get_query(last_sync + num_days, now + num_days))
+      queries.append(self.get_query(last_sync + num_days, end))
     else:
-      queries.append(self.get_query(datetime.datetime.now(), datetime.datetime.now() + num_days))
+      queries.append(self.get_query(now, end))
 
     # Query the automation calendar.
     if DEBUG: print 'Submitting query'
