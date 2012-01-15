@@ -9,6 +9,7 @@
 
 import gdata.calendar.service
 import os
+import sys
 import stat
 import json
 import datetime
@@ -17,6 +18,7 @@ import subprocess
 import re
 
 DEBUG = os.environ.get('DEBUG')
+
 
 class GCalAdapter:
   """
@@ -111,7 +113,14 @@ class GCalAdapter:
     # Query the automation calendar.
     if DEBUG: print 'Submitting query'
     for query in queries:
-      feed = self.get_client().CalendarQuery(query)
+      try:
+        feed = self.get_client().CalendarQuery(query)
+      except gdata.service.RequestError as e:
+        print "Google error:", e.message['reason']
+        print "If you changed your password, run python gcalcron2.py --init "
+        if DEBUG: raise
+        exit()
+
       if len(feed.entry) > 0:
         entries += feed.entry
 
@@ -138,6 +147,7 @@ class GCalAdapter:
     if DEBUG: print events
 
     return (events, now)
+
 
   def parse_commands(self, event_description, event_time):
     """
@@ -182,6 +192,7 @@ class GCalCron2:
   settings = None
   settings_file = os.getenv('HOME') + '/' + '.gcalcron2'
 
+
   def __init__(self, load_settings=True):
     if load_settings:
       self.load_settings()
@@ -191,11 +202,13 @@ class GCalCron2:
     with open(self.settings_file) as f:
       self.settings = json.load(f)
 
+
   def save_settings(self):
     with open(self.settings_file, 'w') as f:
       json.dump(self.settings, f, indent=2)
     # protect the settings fie, since it contains the OAuth login token
     os.chmod(self.settings_file, stat.S_IRUSR + stat.S_IWUSR)
+
 
   def init_settings(self, email, password, cal_id):
     gcal_adapter = GCalAdapter()
@@ -210,26 +223,15 @@ class GCalCron2:
     }
 
 
-  def sync_gcal_to_cron(self, num_days = datetime.timedelta(days=7), verbose = True):
-    """
-    - fetches a list of commands through the GoogleCalendar adapter
-    - schedules them for execution using the unix "at" command
-    - stores their job_id in case of later modifications
-    - deletes eventual cancelled jobs
+  def clean_settings(self):
+    """Cleans the settings from saved jobs in the past"""
 
-    @author Fabrice Bernhard
-    @since 2011-06-13
-    """
+    for event_uid, job in self.settings['jobs'].items():
+      if datetime.datetime.strptime(job['date'], '%Y-%m-%d') <= datetime.datetime.now() - datetime.timedelta(days=1):
+        del self.settings['jobs'][event_uid]
 
-    last_sync = None
-    if self.settings['last_sync']:
-      last_sync = datetime.datetime.strptime(self.settings['last_sync'][:16], '%Y-%m-%d %H:%M')
 
-    gcal_adapter = GCalAdapter(self.settings['google_calendar']['cal_id'], self.settings['google_calendar']['login_token'])
-
-    (events, last_sync) = gcal_adapter.get_events(last_sync, num_days)
-
-    # if event was modified or cancelled, erase existing jobs
+  def unschedule_old_jobs(self, events):
     removed_job_ids = []
     for event in events:
       if event['uid'] in self.settings['jobs']:
@@ -239,6 +241,8 @@ class GCalCron2:
       if DEBUG: print ' '.join(['at', '-d'] + removed_job_ids)
       subprocess.Popen(['at', '-d'] + removed_job_ids)
 
+
+  def schedule_new_jobs(self, events):
     for event in events:
       if not 'commands' in event:
         continue
@@ -268,11 +272,34 @@ class GCalCron2:
           }
 
 
-    # clean the jobs in the file
-    event_uids = self.settings['jobs'].keys()
-    for event_uid in event_uids:
-      if datetime.datetime.strptime(self.settings['jobs'][event_uid]['date'], '%Y-%m-%d') <= datetime.datetime.now() - datetime.timedelta(days=1):
-        del self.settings['jobs'][event_uid]
+  def sync_gcal_to_cron(self, num_days = datetime.timedelta(days=7), verbose = True):
+    """
+    - fetches a list of commands through the GoogleCalendar adapter
+    - schedules them for execution using the unix "at" command
+    - stores their job_id in case of later modifications
+    - deletes eventual cancelled jobs
+
+    @author Fabrice Bernhard
+    @since 2011-06-13
+    """
+
+    last_sync = None
+    if self.settings['last_sync']:
+      last_sync = datetime.datetime.strptime(self.settings['last_sync'][:16], '%Y-%m-%d %H:%M')
+
+    gcal_adapter = GCalAdapter(self.settings['google_calendar']['cal_id'], self.settings['google_calendar']['login_token'])
+
+    (events, last_sync) = gcal_adapter.get_events(last_sync, num_days)
+
+    # first unschedule all modified/deleted events
+    self.unschedule_old_jobs(events)
+
+    # then reschedule all modified/new events
+    self.schedule_new_jobs(events)
+
+    # clean old jobs from the settings
+    self.clean_settings()
+
 
     self.settings['last_sync'] = str(last_sync)
     self.save_settings()
@@ -281,8 +308,10 @@ class GCalCron2:
 def local_to_utc(dt):
   return dt + datetime.timedelta(seconds=time.altzone)
 
+
 def utc_to_local(dt):
   return dt - datetime.timedelta(seconds=time.altzone)
+
 
 def iso_to_datetime(iso):
   """
@@ -300,14 +329,21 @@ def datetime_to_at(dt):
   return dt.strftime('%H:%M %h %d')
 
 
-if __name__ == '__main__':
-  try:
-    g = GCalCron2()
-  except IOError:
+def init():
     email = raw_input('Google email: ')
     password = raw_input('Google password: ')
     cal_id = raw_input('Calendar id (in the form of XXXXX....XXXX@group.calendar.google.com or for the main one just your Google email): ')
     g = GCalCron2(load_settings=False)
     g.init_settings(email, password, cal_id)
     g.save_settings()
+
+if __name__ == '__main__':
+  if '--init' in sys.argv:
+    init()
+
+  try:
+    g = GCalCron2()
+  except IOError:
+    init()
+
   g.sync_gcal_to_cron()
