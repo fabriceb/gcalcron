@@ -16,7 +16,7 @@ import time
 import subprocess
 import re
 
-DEBUG = False
+DEBUG = os.environ.get('DEBUG')
 
 class GCalAdapter:
   """
@@ -70,7 +70,7 @@ class GCalAdapter:
     >>> g = GCalAdapter()
     >>> g.cal_id = 'login@gmail.com'
     >>> g.get_query(datetime.datetime(2011, 6, 19, 14, 0), datetime.datetime(2011, 6, 26, 14, 0), datetime.datetime(2011, 6, 18, 14, 0))
-    {'start-max': '2011-06-26T12:00:00', 'max-results': '1000', 'singleevents': 'true', 'updated-min': '2011-06-18T12:00:00', 'start-min': '2011-06-19T12:00:00'}
+    {'start-max': '2011-06-26T06:00:00', 'max-results': '1000', 'singleevents': 'true', 'ctz': 'UTC', 'updated-min': '2011-06-18T06:00:00', 'start-min': '2011-06-19T06:00:00'}
     
     @author Fabrice Bernhard
     @since 2011-06-19
@@ -230,14 +230,14 @@ class GCalCron2:
     (events, last_sync) = gcal_adapter.get_events(last_sync, num_days)
 
     # if event was modified or cancelled, erase existing jobs
-    job_ids = []
+    removed_job_ids = []
     for event in events:  
       if event['uid'] in self.settings['jobs']:
-        job_ids += self.settings['jobs'][event['uid']]['ids']
+        removed_job_ids += self.settings['jobs'][event['uid']]['ids']
         del self.settings['jobs'][event['uid']]
-    if len(job_ids) > 0:
-      if DEBUG: print ' '.join(['at', '-d'] + job_ids)
-      p = subprocess.Popen(['at', '-d'] + job_ids)
+    if len(removed_job_ids) > 0:
+      if DEBUG: print ' '.join(['at', '-d'] + removed_job_ids)
+      subprocess.Popen(['at', '-d'] + removed_job_ids)
 
     for event in events:
       if 'commands' in event:
