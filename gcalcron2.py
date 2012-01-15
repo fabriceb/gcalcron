@@ -24,7 +24,7 @@ class GCalAdapter:
   @since 2011-06-19
   """
 
-  application_name = 'Theodo-gCalCron-2.0'  
+  application_name = 'Theodo-gCalCron-2.0'
   client = None
   cal_id = None
   login_token = None
@@ -39,7 +39,7 @@ class GCalAdapter:
     """
     Returns the Google Calendar API client
     @author Fabrice Bernhard
-    @since 2011-06-13 
+    @since 2011-06-13
     """
 
     if not self.client:
@@ -54,7 +54,7 @@ class GCalAdapter:
     """
     Fetches the Google Calendar API token using email and password
     @author Fabrice Bernhard
-    @since 2011-06-13 
+    @since 2011-06-13
     """
 
     client = self.get_client()
@@ -71,13 +71,13 @@ class GCalAdapter:
     >>> g.cal_id = 'login@gmail.com'
     >>> g.get_query(datetime.datetime(2011, 6, 19, 14, 0), datetime.datetime(2011, 6, 26, 14, 0), datetime.datetime(2011, 6, 18, 14, 0))
     {'start-max': '2011-06-26T06:00:00', 'max-results': '1000', 'singleevents': 'true', 'ctz': 'UTC', 'updated-min': '2011-06-18T06:00:00', 'start-min': '2011-06-19T06:00:00'}
-    
+
     @author Fabrice Bernhard
     @since 2011-06-19
     """
 
     if DEBUG: print 'Setting up query: %s to %s modified after %s' % (start_min, start_max, updated_min)
-    
+
     query = gdata.calendar.service.CalendarEventQuery(self.cal_id, 'private', 'full')
     query.start_min = local_to_utc(start_min).isoformat()
     query.start_max = local_to_utc(start_max).isoformat()
@@ -96,7 +96,7 @@ class GCalAdapter:
      - events between now and last_sync + num_days which have been updated since last_sync
      - new events between last_sync + num_days and now + num_days
     @author Fabrice Bernhard
-    @since 2011-06-13 
+    @since 2011-06-13
     """
 
     queries = []
@@ -148,7 +148,7 @@ class GCalAdapter:
     [{'exec_time': datetime.datetime(2011, 6, 19, 8, 30), 'command': "echo 'Wake up!'"}, {'exec_time': datetime.datetime(2011, 6, 19, 8, 40), 'command': "echo 'Wake up, you are 10 minutes late!'"}]
 
     @author Fabrice Bernhard
-    @since 2011-06-13 
+    @since 2011-06-13
     """
 
     commands = []
@@ -176,9 +176,9 @@ class GCalCron2:
   them synchronised in case of updates
 
   @author Fabrice Bernhard
-  @since 2011-06-13 
+  @since 2011-06-13
   """
-  
+
   settings = None
   settings_file = os.getenv('HOME') + '/' + '.gcalcron2'
 
@@ -201,11 +201,11 @@ class GCalCron2:
     gcal_adapter = GCalAdapter()
     login_token = gcal_adapter.fetch_login_token(email, password)
     self.settings = {
-      "jobs": {}, 
+      "jobs": {},
       "google_calendar": {
-        "login_token": login_token, 
+        "login_token": login_token,
         "cal_id": cal_id
-      }, 
+      },
       "last_sync": None
     }
 
@@ -218,7 +218,7 @@ class GCalCron2:
     - deletes eventual cancelled jobs
 
     @author Fabrice Bernhard
-    @since 2011-06-13 
+    @since 2011-06-13
     """
 
     last_sync = None
@@ -231,7 +231,7 @@ class GCalCron2:
 
     # if event was modified or cancelled, erase existing jobs
     removed_job_ids = []
-    for event in events:  
+    for event in events:
       if event['uid'] in self.settings['jobs']:
         removed_job_ids += self.settings['jobs'][event['uid']]['ids']
         del self.settings['jobs'][event['uid']]
@@ -240,25 +240,34 @@ class GCalCron2:
       subprocess.Popen(['at', '-d'] + removed_job_ids)
 
     for event in events:
-      if 'commands' in event:
-        for command in event['commands']:
-          if command['exec_time']>datetime.datetime.now():
-            if DEBUG: print "at "+ datetime_to_at(command['exec_time']) 
-            p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-            (_, output) = p.communicate(command['command'])
-            if DEBUG: print "  " + output
-            job_id_match = re.compile('job (\d+) at').search(output)
-            if job_id_match:
-              job_id = job_id_match.group(1)
-            if event['uid'] in self.settings['jobs']:
-              self.settings['jobs'][event['uid']]['ids'].append(job_id)
-            else:
-              self.settings['jobs'][event['uid']] = {
-                'date': command['exec_time'].strftime('%Y-%m-%d'),
-                'ids': [job_id, ]
-              }
+      if not 'commands' in event:
+        continue
 
-    
+      for command in event['commands']:
+        if command['exec_time'] <= datetime.datetime.now():
+          continue
+
+        if DEBUG: print "at "+ datetime_to_at(command['exec_time'])
+
+        p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        (_, output) = p.communicate(command['command'])
+
+        if DEBUG: print "  " + output
+
+        job_id_match = re.compile('job (\d+) at').search(output)
+
+        if job_id_match:
+          job_id = job_id_match.group(1)
+
+        if event['uid'] in self.settings['jobs']:
+          self.settings['jobs'][event['uid']]['ids'].append(job_id)
+        else:
+          self.settings['jobs'][event['uid']] = {
+            'date': command['exec_time'].strftime('%Y-%m-%d'),
+            'ids': [job_id, ]
+          }
+
+
     # clean the jobs in the file
     event_uids = self.settings['jobs'].keys()
     for event_uid in event_uids:
