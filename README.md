@@ -6,14 +6,14 @@ The goal of GCalCron is to use Google Calendar as a GUI to your crontab. It enab
  * a great user interface for quick and easy scheduling and re-scheduling using Google Calendar,
    available on all platforms, web and mobile.
 
-A common use of this tool is to administer a home automation server. 
-Using GCalCron2, changing your wake-up time before going to bed is as easy as changing the time of 
+A common use of this tool is to administer a home automation server.
+Using GCalCron2, changing your wake-up time before going to bed is as easy as changing the time of
 the associated Google Calendar event.
 
 
 ## History ##
 
-GCalCron2 is a complete rewrite of GCalCron by Patrick Spear. 
+GCalCron2 is a complete rewrite of GCalCron by Patrick Spear.
 See http://www.pfspear.net/projects/gcalcron for his first version.
 
 
@@ -85,7 +85,7 @@ For example, to sync every 10 minutes, run `crontab -e`, and add the following l
 ## Development
 
 To run DocTests: `python -m doctest -v gcalcron2.py`
- 
+
 -------------------------------------------------------------------------
 
 ## Special section for LaCie Network Space 2 hackers ##
@@ -96,7 +96,7 @@ I wrote GCalCron2 for such a device, here are the additional steps I needed to m
 
  * Enable ssh on the machine: http://lacie.nas-central.org/wiki/Category:Network_Space_2#Enabling_SSH_with_disassembling
  * Install Ipkg, a lightweight package management system: http://forum.nas-central.org/viewtopic.php?f=236&t=2348 cs08q1armel worked perfectly for me
- 
+
         cd /opt
         feed=http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/cross/stable
         feednative=http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/native/unstable
@@ -108,8 +108,8 @@ I wrote GCalCron2 for such a device, here are the additional steps I needed to m
         echo "src native $feednative" >> /opt/etc/ipkg/feeds.conf
         export PATH=/opt/bin:$PATH
         ipkg update
-        
+
  * Download the at package http://ipkg.nslu2-linux.org/feeds/optware/cs08q1armel/cross/stable/at_3.1.8-5_arm.ipk
  * install it: ipkg at_3.1.8-5_arm.ipk
- 
- 
+
+

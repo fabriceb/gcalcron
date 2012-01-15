@@ -129,16 +129,17 @@ class GCalAdapter:
 
     events = []
     for i, event in zip(xrange(len(entries)), entries):
-      event_time = utc_to_local(dateutil.parser.parse(event.when[0].start_time)).replace (tzinfo = None)
+      start_time = utc_to_local(dateutil.parser.parse(event.when[0].start_time)).replace (tzinfo = None)
+      end_time   = utc_to_local(dateutil.parser.parse(event.when[0].end_time)).replace (tzinfo = None)
       event_id = event.id.text
-      if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, event_time, ' (', event.when[0].start_time, ') ', '=>', event.content.text
+      if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, start_time, ' -> ', end_time, ' (', event.when[0].start_time, ' -> ', event.when[0].end_time, ') ', '=>', event.content.text
       if event.event_status.value == 'CANCELED':
         if DEBUG: print "CANCELLED", event_id
         events.append({
           'uid': event_id
         })
       elif event.content.text:
-        commands = self.parse_commands(event.content.text, event_time)
+        commands = self.parse_commands(event.content.text, start_time, end_time)
         if commands:
           events.append({
               'uid': event_id,
@@ -149,14 +150,17 @@ class GCalAdapter:
 
     return (events, now)
 
-
-  def parse_commands(self, event_description, event_time):
+  def parse_commands(self, event_description, start_time, end_time):
     """
     Parses the description of a Google calendar event and returns a list of commands to execute
 
     >>> g = GCalAdapter()
-    >>> g.parse_commands("echo 'Wake up!'\\n+10: echo 'Wake up, you are 10 minutes late!'", datetime.datetime(2011, 6, 19, 8, 30))
-    [{'exec_time': datetime.datetime(2011, 6, 19, 8, 30), 'command': "echo 'Wake up!'"}, {'exec_time': datetime.datetime(2011, 6, 19, 8, 40), 'command': "echo 'Wake up, you are 10 minutes late!'"}]
+    >>> g.parse_commands("echo 'Wake up!'\\n+10: echo 'Wake up, you are 10 minutes late!'", datetime.datetime(3011, 6, 19, 8, 30), datetime.datetime(3011, 6, 19, 9, 0))
+    [{'exec_time': datetime.datetime(3011, 6, 19, 8, 30), 'command': "echo 'Wake up!'"}, {'exec_time': datetime.datetime(3011, 6, 19, 8, 40), 'command': "echo 'Wake up, you are 10 minutes late!'"}]
+
+    >>> g.parse_commands("Turn on lights\\nend -10: Dim lights\\nend: Turn off lights", datetime.datetime(3011, 6, 19, 18, 30), datetime.datetime(3011, 6, 19, 23, 0))
+    [{'exec_time': datetime.datetime(3011, 6, 19, 18, 30), 'command': 'Turn on lights'}, {'exec_time': datetime.datetime(3011, 6, 19, 22, 50), 'command': 'Dim lights'}, {'exec_time': datetime.datetime(3011, 6, 19, 23, 0), 'command': 'Turn off lights'}]
+
 
     @author Fabrice Bernhard
     @since 2011-06-13
@@ -164,18 +168,26 @@ class GCalAdapter:
 
     commands = []
     for command in event_description.split("\n"):
-      exec_time = event_time
-      offset_match = re.compile('([\+,-]\d+): (.*)').search(command)
+      exec_time = start_time
+      # Supported syntax for offset prefixes:
+      #   '[+-]10: ', 'end:', 'end[+-]10:', 'end [+-]10:'
+      offset_match = re.compile('^(end)? ?([\+,-]\d+)?: (.*)').search(command)
       if offset_match:
-        exec_time += datetime.timedelta(minutes=int(offset_match.group(1)))
-        command = offset_match.group(2)
+        if offset_match.group(1):
+          exec_time = end_time
+        if offset_match.group(2):
+          exec_time += datetime.timedelta(minutes=int(offset_match.group(2)))
+        command = offset_match.group(3)
 
-      if exec_time >= datetime.datetime.now():
-        commands.append({
-            'command': command,
-            'exec_time': exec_time
-          })
-      elif DEBUG: print 'Ignoring command that was scheduled for the past'
+      command = command.strip()
+      if command:
+        if exec_time >= datetime.datetime.now():
+          commands.append({
+              'command': command,
+              'exec_time': exec_time
+            })
+        elif DEBUG: print 'Ignoring command that was scheduled for the past'
+      elif DEBUG: print 'Blank command'
 
     return commands
 
@@ -300,7 +312,6 @@ class GCalCron2:
 
     # clean old jobs from the settings
     self.clean_settings()
-
 
     self.settings['last_sync'] = str(last_sync)
     self.save_settings()
