@@ -79,16 +79,15 @@ class GCalAdapter:
     @since 2011-06-19
     """
 
-    if DEBUG: print 'Setting up query: %s to %s modified after %s' % (start_min, start_max, updated_min)
-
+    if DEBUG: print 'Setting up query: %s to %s modified after %s' % (start_min.isoformat() + '+01:00', start_max.isoformat() + '+01:00', updated_min)
+    
     query = gdata.calendar.service.CalendarEventQuery(self.cal_id, 'private', 'full')
-    query.start_min = local_to_utc(start_min).isoformat()
-    query.start_max = local_to_utc(start_max).isoformat()
+    query.start_min = start_min.isoformat() + '+01:00'
+    query.start_max = start_max.isoformat() + '+01:00'
     query.singleevents = 'true'
-    query.ctz = 'UTC'
     query.max_results = 1000
     if updated_min:
-      query.updated_min = local_to_utc(updated_min).isoformat()
+      query.updated_min = updated_min.isoformat() + '+01:00'
 
     return query
 
@@ -101,10 +100,11 @@ class GCalAdapter:
     @author Fabrice Bernhard
     @since 2011-06-13
     """
-
+    
     queries = []
     entries = []
     now = datetime.datetime.now()
+    now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute, now.second)
     if last_sync:
       queries.append(self.get_query(now, last_sync + num_days, last_sync))
       queries.append(self.get_query(last_sync + num_days, now + num_days))
@@ -129,8 +129,8 @@ class GCalAdapter:
 
     events = []
     for i, event in zip(xrange(len(entries)), entries):
-      start_time = utc_to_local(dateutil.parser.parse(event.when[0].start_time)).replace (tzinfo = None)
-      end_time   = utc_to_local(dateutil.parser.parse(event.when[0].end_time)).replace (tzinfo = None)
+      start_time = iso_to_datetime(dateutil.parser.parse(event.when[0].start_time)).replace (tzinfo = None)
+      end_time   = iso_to_datetime(dateutil.parser.parse(event.when[0].end_time)).replace (tzinfo = None)
       event_id = event.id.text
       if DEBUG: print event_id, '-', event.event_status.value, '-', event.updated.text, ': ', event.title.text, start_time, ' -> ', end_time, ' (', event.when[0].start_time, ' -> ', event.when[0].end_time, ') ', '=>', event.content.text
       if event.event_status.value == 'CANCELED':
@@ -317,12 +317,12 @@ class GCalCron2:
     self.save_settings()
 
 
-def local_to_utc(dt):
-  return dt + datetime.timedelta(seconds=time.altzone)
-
-
-def utc_to_local(dt):
-  return dt - datetime.timedelta(seconds=time.altzone)
+def iso_to_datetime(iso):
+  """
+  >>> iso_to_datetime('2011-06-18T12:00:00')
+  datetime.datetime(2011, 6, 18, 12, 0)
+  """
+  return datetime.datetime.strptime(iso[:16], '%Y-%m-%dT%H:%M')
 
 
 def datetime_to_at(dt):
