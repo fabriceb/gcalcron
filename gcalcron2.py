@@ -242,13 +242,14 @@ class GCalCron2:
     for event in events:
       if 'commands' in event:
         for command in event['commands']:
-          if DEBUG: print "at "+ datetime_to_at(command['exec_time']) 
-          p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-          (_, output) = p.communicate(command['command'])
-          if DEBUG: print "  " + output
-          job_id_match = re.compile('job (\d+) at').search(output)
-          if job_id_match:
-            job_id = job_id_match.group(1)
+          if command['exec_time']>datetime.datetime.now():
+            if DEBUG: print "at "+ datetime_to_at(command['exec_time']) 
+            p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+            (_, output) = p.communicate(command['command'])
+            if DEBUG: print "  " + output
+            job_id_match = re.compile('job (\d+) at').search(output)
+            if job_id_match:
+              job_id = job_id_match.group(1)
             if event['uid'] in self.settings['jobs']:
               self.settings['jobs'][event['uid']]['ids'].append(job_id)
             else:
@@ -299,4 +300,5 @@ if __name__ == '__main__':
     cal_id = raw_input('Calendar id (in the form of XXXXX....XXXX@group.calendar.google.com or for the main one just your Google email): ')
     g = GCalCron2(load_settings=False)
     g.init_settings(email, password, cal_id)
+    g.save_settings()
   g.sync_gcal_to_cron()
