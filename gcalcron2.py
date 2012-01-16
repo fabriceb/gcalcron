@@ -342,6 +342,7 @@ def init():
     g = GCalCron2(load_settings=False)
     g.init_settings(email, password, cal_id)
     g.save_settings()
+    return g
 
 if __name__ == '__main__':
   if '--init' in sys.argv:
@@ -350,7 +351,7 @@ if __name__ == '__main__':
   try:
     g = GCalCron2()
   except IOError:
-    init()
+    g = init()
 
   if '--reset' in sys.argv:
     g.reset_settings()
