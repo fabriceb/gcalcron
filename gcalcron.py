@@ -63,7 +63,6 @@ class GCalAdapter:
   # <https://developers.google.com/+/best-practices>.
   FLOW = client.flow_from_clientsecrets(CLIENT_SECRETS,
     scope=[
-        'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/calendar.readonly',
       ],
     message=tools.message_if_missing(CLIENT_SECRETS))
@@ -392,7 +391,7 @@ def main(argv):
 
   level = getattr(logging, flags.logging_level)
   logger.setLevel(level)
-  h1 = logging.StreamHandler(stream=sys.stdout)
+  h1 = logging.StreamHandler(sys.stdout)
   h1.setLevel(level)
   logger.addHandler(h1)
 
