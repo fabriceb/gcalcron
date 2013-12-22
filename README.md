@@ -47,19 +47,19 @@ GCalCron depends on the google api python client library:
 Clone the GCalCron repository:
 
 ```bash
-git clone https://github.com/fabriceb/GCalCron.git $HOME/GCalCron
+git clone https://github.com/fabriceb/gcalcron.git $HOME/gcalcron
 ```
 
 Run the script:
 
 ```bash
-cd $HOME/GCalCron
+cd $HOME/gcalcron
 python gcalcron.py
 ```
 
 The first time it runs, it will need a client_secrets.json file. To get one, go to https://cloud.google.com/console#/project, create a new project and give it access to the Google Calendar API
 
-Then go in the APIs & auth > Credentials menu and hit the "Download JSON" in the OAuth "Client ID for native application" section. This will get you a file that you need to move inside the GCalCron folder and rename client_secrets.json
+Then go in the APIs & auth > Credentials menu and hit the "Download JSON" in the OAuth "Client ID for native application" section. This will get you a file that you need to move inside the gcalcron folder and rename client_secrets.json
 
 It will also need the id of the Google Calendar you intend to use for tasks scheduling.
 If you create a dedicated calendar for this (recommended)
@@ -71,17 +71,17 @@ Follow these instructions to find your Calendar ID:
    then select Calendar settings.
  * In the Calendar Address section, locate the Calendar ID listed next to the XML, ICAL and HTML buttons.
 
-This has to be done only once, the OAuth login token is stored in a credentials.dat file and the Calendar ID in your settings file (default: $HOME/.GCalCron)
+This has to be done only once, the OAuth login token is stored in a credentials.dat file and the Calendar ID in your settings file (default: $HOME/.gcalcron)
 
 *Be aware that this OAuth login token gives read access to all your Google calendars! Please keep it in a safe place and do not use this program on a machine on which you are not the only root user!*
 
-Add `python GCalCron.py` to your cron. Choose your desired sync frequency,
+Add `python gcalcron.py` to your cron. Choose your desired sync frequency,
 but it will only impact the delay between a change in Google Calendar and it being taken into account on your system.
 
 For example, to sync every 10 minutes, run `crontab -e`, and add the following line:
 
 ```bash
-*/10 * * * * python /your/home/directory/GCalCron/gcalcron.py
+*/10 * * * * python /your/home/directory/gcalcron/gcalcron.py
 ```
 
 ## Usage ##
@@ -101,7 +101,7 @@ end: /usr/bin/python /home/automation/heating_off.py
 
 ## Development
 
-To run DocTests: `python -m doctest -v GCalCron.py`
+To run DocTests: `python -m doctest -v gcalcron.py`
 
 -------------------------------------------------------------------------
 
