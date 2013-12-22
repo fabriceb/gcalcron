@@ -1,1 +1,3 @@
 *.pyc
+client_secrets.json
+credentials.dat

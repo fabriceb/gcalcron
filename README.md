@@ -1,4 +1,4 @@
-# GCalCron2 #
+# GCalCron #
 
 The goal of GCalCron is to use Google Calendar as a GUI to your crontab. It enables you to have at the same time:
 
@@ -7,13 +7,19 @@ The goal of GCalCron is to use Google Calendar as a GUI to your crontab. It enab
    available on all platforms, web and mobile.
 
 A common use of this tool is to administer a home automation server.
-Using GCalCron2, changing your wake-up time before going to bed is as easy as changing the time of
+Using GCalCron, changing your wake-up time before going to bed is as easy as changing the time of
 the associated Google Calendar event.
 
 
 ## History ##
 
-GCalCron2 is a complete rewrite of GCalCron by Patrick Spear.
+### NEW in version 3 ###
+
+GCalCron 3 is a rewrite of the Google Calendar API part to make it compatible with Google API v3
+
+### NEW in version 2.0 ###
+
+GCalCron 2 is a complete rewrite of GCalCron by Patrick Spear.
 See http://www.pfspear.net/projects/gcalcron for his first version.
 
 
@@ -34,26 +40,28 @@ See http://www.pfspear.net/projects/gcalcron for his first version.
 
 ## Install ##
 
-GcalCron2 depends on a few python libraries:
+GCalCron depends on the google api python client library:
 
-* Install on Ubuntu, Debian, etc. : `sudo apt-get install python-gdata python-dateutil`
-* Install on Fedora, CentOS, etc. : `sudo yum install python-gdata python-dateutil`
+* `sudo pip install --upgrade google-api-python-client`
 
-Clone the GcalCron2 repository:
+Clone the GCalCron repository:
 
 ```bash
-git clone https://github.com/fabriceb/GCalCron2.git $HOME/GCalCron2
+git clone https://github.com/fabriceb/GCalCron.git $HOME/GCalCron
 ```
 
 Run the script:
 
 ```bash
-cd $HOME/GCalCron2
-python gcalcron2.py
+cd $HOME/GCalCron
+python gcalcron.py
 ```
 
-The first time it runs, it will ask for your Google and Email password,
-as well as the id of the Google Calendar you intend to use for tasks scheduling.
+The first time it runs, it will need a client_secrets.json file. To get one, go to https://cloud.google.com/console#/project, create a new project and give it access to the Google Calendar API
+
+Then go in the APIs & auth > Credentials menu and hit the "Download JSON" in the OAuth "Client ID for native application" section. This will get you a file that you need to move inside the GCalCron folder and rename client_secrets.json
+
+It will also need the id of the Google Calendar you intend to use for tasks scheduling.
 If you create a dedicated calendar for this (recommended)
 it will look like this: `1234567890abcdefghijklmnop@group.calendar.google.com`
 
@@ -63,17 +71,17 @@ Follow these instructions to find your Calendar ID:
    then select Calendar settings.
  * In the Calendar Address section, locate the Calendar ID listed next to the XML, ICAL and HTML buttons.
 
-This has to be done only once, the OAuth login token is then stored in your settings file (default: $HOME/.gcalcron2)
+This has to be done only once, the OAuth login token is stored in a credentials.dat file and the Calendar ID in your settings file (default: $HOME/.GCalCron)
 
-*Be aware that this OAuth login token gives read and write access to all your Google calendars! Please keep it in a safe place and do not use this program on a machine on which you are not the only root user!*
+*Be aware that this OAuth login token gives read access to all your Google calendars! Please keep it in a safe place and do not use this program on a machine on which you are not the only root user!*
 
-Add `python gcalcron2.py` to your cron. Choose your desired sync frequency,
+Add `python GCalCron.py` to your cron. Choose your desired sync frequency,
 but it will only impact the delay between a change in Google Calendar and it being taken into account on your system.
 
 For example, to sync every 10 minutes, run `crontab -e`, and add the following line:
 
 ```bash
-*/10 * * * * python /your/home/directory/GCalCron2/gcalcron2.py
+*/10 * * * * python /your/home/directory/GCalCron/gcalcron.py
 ```
 
 ## Usage ##
@@ -93,7 +101,7 @@ end: /usr/bin/python /home/automation/heating_off.py
 
 ## Development
 
-To run DocTests: `python -m doctest -v gcalcron2.py`
+To run DocTests: `python -m doctest -v GCalCron.py`
 
 -------------------------------------------------------------------------
 
@@ -101,7 +109,7 @@ To run DocTests: `python -m doctest -v gcalcron2.py`
 
 The LaCie Network Space 2 http://lacie.nas-central.org/wiki/Category:Network_Space_2 is a great-looking silent NAS. And most importantly it is easy to enable ssh, so it is a perfect choice for a discrete home automation solution.
 
-I wrote GCalCron2 for such a device, here are the additional steps I needed to make it work:
+I wrote GCalCron for such a device, here are the additional steps I needed to make it work:
 
  * Enable ssh on the machine: http://lacie.nas-central.org/wiki/Category:Network_Space_2#Enabling_SSH_with_disassembling
  * Install Ipkg, a lightweight package management system: http://forum.nas-central.org/viewtopic.php?f=236&t=2348 cs08q1armel worked perfectly for me
