@@ -74,7 +74,7 @@ class GCalAdapter:
     # If the credentials don't exist or are invalid run through the native client
     # flow. The Storage object will ensure that if successful the good
     # credentials will get written back to the file.
-    storage = file.Storage('credentials.dat')
+    storage = file.Storage(os.path.join(os.path.dirname(__file__), 'credentials.dat'))
     credentials = storage.get()
     if credentials is None or credentials.invalid:
       credentials = tools.run_flow(self.FLOW, storage, flags)
@@ -158,7 +158,8 @@ class GCalAdapter:
     end = sync_start + num_days
     if last_sync:
       queries.append(self.get_query(sync_start, last_sync + num_days, last_sync))
-      queries.append(self.get_query(last_sync + num_days, end))
+      if end - last_sync - num_days > datetime.timedelta(hours=1):
+        queries.append(self.get_query(last_sync + num_days, end))
     else:
       queries.append(self.get_query(sync_start, end))
 
