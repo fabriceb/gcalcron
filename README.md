@@ -81,7 +81,8 @@ but it will only impact the delay between a change in Google Calendar and it bei
 For example, to sync every 10 minutes, run `crontab -e`, and add the following line:
 
 ```bash
-*/10 * * * * python /your/home/directory/gcalcron/gcalcron.py
+PATH=/opt/bin:/bin:/usr/bin:/sbin:/usr/sbin
+* * * * * python /your/home/directory/gcalcron/gcalcron.py
 ```
 
 ## Usage ##

@@ -33,7 +33,7 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
-
+                                    
 # Parser for command-line arguments.
 parser = argparse.ArgumentParser(
     description=__doc__,
@@ -219,9 +219,12 @@ class GCalCron:
 
   def reset_settings(self):
     for event, job in self.settings['jobs'].items():
-      command = ['at', '-d'] + job['ids']
-      logger.info(' '.join(command))
-      subprocess.Popen(command)
+      command = [u'at', u'-d'] + job['ids']
+      logger.debug(command)
+      p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      (stdout, stderr) = p.communicate()
+      logger.debug(stdout)
+      logger.debug(stderr)
     self.settings['last_sync'] = None
     self.settings['jobs'] = {}
     self.save_settings()
@@ -234,9 +237,12 @@ class GCalCron:
         removed_job_ids += self.settings['jobs'][event['uid']]['ids']
         del self.settings['jobs'][event['uid']]
     if len(removed_job_ids) > 0:
-      logger.info(' '.join(['at', '-d'] + removed_job_ids))
-      subprocess.Popen(['at', '-d'] + removed_job_ids)
-
+      command = [u'at', u'-d'] + removed_job_ids
+      logger.debug(command)
+      p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      (stdout, stderr) = p.communicate()
+      logger.debug(stdout)
+      logger.debug(stderr)
 
   def schedule_new_jobs(self, events):
     for event in events:
@@ -247,17 +253,20 @@ class GCalCron:
         if command['exec_time'] <= datetime.datetime.now():
           continue
 
-        logger.info("at "+ datetime_to_at(command['exec_time']))
+        cmd = ['at', datetime_to_at(command['exec_time'])]
+        logger.debug(cmd)
 
-        p = subprocess.Popen(['at', datetime_to_at(command['exec_time'])], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-        (_, output) = p.communicate(command['command'])
-
-        logger.info(output)
-
-        job_id_match = re.compile('job (\d+) at').search(output)
+        p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = p.communicate(command['command'])
+        
+        logger.debug(stdout)
+        logger.debug(stderr)
+                              
+        job_id_match = re.compile('job (\d+) at').search(stderr)
 
         if job_id_match:
           job_id = job_id_match.group(1)
+        logger.debug('identified job_id: ' + job_id)
 
         if event['uid'] in self.settings['jobs']:
           self.settings['jobs'][event['uid']]['ids'].append(job_id)
@@ -359,7 +368,7 @@ def parse_events(events):
   for event in events:
     start_time = dateutil.parser.parse(event['start']['dateTime']).replace(tzinfo=None)
     end_time   = dateutil.parser.parse(event['end']['dateTime']).replace(tzinfo=None)
-    logger.info(event['id'] + '-' + event['status'] + '-' + event['updated'] + ': ' + event['summary'] + unicode(start_time) + ' -> ' + unicode(end_time) + ' (' + event['start']['dateTime'] + ' -> ' + event['end']['dateTime'] + ') ' + '=>' + event['description'])
+    logger.debug(event['id'] + '-' + event['status'] + '-' + event['updated'] + ': ' + unicode(start_time) + ' -> ' + unicode(end_time) + ' (' + event['start']['dateTime'] + ' -> ' + event['end']['dateTime'] + ') ' + '=>' + event['description'])
     if event['status'] == 'cancelled':
       logger.info("cancelled " + event['id'])
       commandsList.append({
@@ -391,22 +400,27 @@ def main(argv):
   flags = parser.parse_args(argv[1:])
 
   level = getattr(logging, flags.logging_level)
-  logger.setLevel(level)
+  logger.setLevel(logging.DEBUG)
   h1 = logging.StreamHandler(sys.stdout)
   h1.setLevel(level)
   logger.addHandler(h1)
 
+  fh = logging.FileHandler(os.path.join(os.path.dirname(__file__), 'gcalcron.log'))
+  fh.setLevel(logging.DEBUG)
+  logger.addHandler(fh)
 
-  g = GCalCron()
-  gCalAdapter = GCalAdapter(g.getCalendarId(), flags)
-  g.gCalAdapter = gCalAdapter
+  try:
+    g = GCalCron()
+    gCalAdapter = GCalAdapter(g.getCalendarId(), flags)
+    g.gCalAdapter = gCalAdapter
 
-  if flags.reset:
-    g.reset_settings()
-  else:
-    g.sync_gcal_to_cron()
-
-
+    if flags.reset:
+      g.reset_settings()
+    else:
+      g.sync_gcal_to_cron()
+      logger.info('Sync succeeded')
+  except:
+    logging.exception('Sync failed')
 
 if __name__ == '__main__':
   main(sys.argv)
