@@ -159,9 +159,10 @@ class GCalAdapter:
     queries = []
     end = sync_start + num_days
     if last_sync:
+      # query all events modified since last synchronisation
       queries.append(self.get_query(sync_start, last_sync + num_days, last_sync))
-      if end - last_sync - num_days > datetime.timedelta(hours=1):
-        queries.append(self.get_query(last_sync + num_days, end))
+      # query all events which appeared in the [last_sync + num_days, sync_start + num_days] time frame 
+      queries.append(self.get_query(last_sync + num_days, end))
     else:
       queries.append(self.get_query(sync_start, end))
 
