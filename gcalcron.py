@@ -33,7 +33,7 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
-                                    
+
 # Parser for command-line arguments.
 parser = argparse.ArgumentParser(
     description=__doc__,
@@ -57,38 +57,40 @@ class GCalAdapter:
   # <https://cloud.google.com/console#/project/395452703880/apiui>
   CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 
-  # Set up a Flow object to be used for authentication.
-  # Add one or more of the following scopes. PLEASE ONLY ADD THE SCOPES YOU
-  # NEED. For more information on using scopes please see
-  # <https://developers.google.com/+/best-practices>.
-  FLOW = client.flow_from_clientsecrets(CLIENT_SECRETS,
-    scope=[
-        'https://www.googleapis.com/auth/calendar.readonly',
-      ],
-    message=tools.message_if_missing(CLIENT_SECRETS))
-
 
   def __init__(self, calendarId=None, flags=None):
     self.calendarId = calendarId
+    self.service = None
 
-    # If the credentials don't exist or are invalid run through the native client
-    # flow. The Storage object will ensure that if successful the good
-    # credentials will get written back to the file.
-    storage = file.Storage(os.path.join(os.path.dirname(__file__), 'credentials.dat'))
-    credentials = storage.get()
-    if credentials is None or credentials.invalid:
-      credentials = tools.run_flow(self.FLOW, storage, flags)
+  def get_service(self):
+    if not self.service:
+      # If the credentials don't exist or are invalid run through the native client
+      # flow. The Storage object will ensure that if successful the good
+      # credentials will get written back to the file.
+      storage = file.Storage(os.path.join(os.path.dirname(__file__), 'credentials.dat'))
+      credentials = storage.get()
+      if credentials is None or credentials.invalid:
+        # Set up a Flow object to be used for authentication.
+        # Add one or more of the following scopes. PLEASE ONLY ADD THE SCOPES YOU
+        # NEED. For more information on using scopes please see
+        # <https://developers.google.com/+/best-practices>.
+        FLOW = client.flow_from_clientsecrets(self.CLIENT_SECRETS,
+          scope=[
+              'https://www.googleapis.com/auth/calendar.readonly',
+            ],
+          message=tools.message_if_missing(self.CLIENT_SECRETS))
+
+        credentials = tools.run_flow(FLOW, storage, flags)
 
 
-    # Create an httplib2.Http object to handle our HTTP requests and authorize it
-    # with our good Credentials.
-    http = httplib2.Http()
-    http = credentials.authorize(http)
-    # Construct the service object for the interacting with the Calendar API.
-    self.service = discovery.build('calendar', 'v3', http=http)
+      # Create an httplib2.Http object to handle our HTTP requests and authorize it
+      # with our good Credentials.
+      http = httplib2.Http()
+      http = credentials.authorize(http)
+      # Construct the service object for the interacting with the Calendar API.
+      self.service = discovery.build('calendar', 'v3', http=http)
 
-
-
+    return self.service
 
   def get_query(self, start_min, start_max, updated_min=None):
     """
@@ -131,7 +133,7 @@ class GCalAdapter:
         pageToken = None
         while True:
           query['pageToken'] = pageToken
-          gCalEvents = self.service.events().list(**query).execute()
+          gCalEvents = self.get_service().events().list(**query).execute()
           entries += gCalEvents['items']
           pageToken = gCalEvents.get('nextPageToken')
           if not pageToken:
@@ -258,10 +260,10 @@ class GCalCron:
 
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate(command['command'])
-        
+
         logger.debug(stdout)
         logger.debug(stderr)
-                              
+
         job_id_match = re.compile('job (\d+) at').search(stderr)
 
         if job_id_match:
@@ -355,8 +357,8 @@ def parse_events(events):
   """
   Transforms the Google Calendar API results into a list of commands
 
-  >>> parse_events([{u'status': u'confirmed', u'updated': u'2013-12-22T19:49:13.750Z', u'end': {u'dateTime': u'2013-12-23T02:00:00+01:00'}, u'description': u'-60: start_heating.py\\n0: turn_music_on.py\\n+30: stop_heating.py', u'summary': u'Wakeup', u'start': {u'dateTime': u'2013-12-23T01:00:00+01:00'}, u'id': u'olbia2urfm1ns0h88v4u0d9a5g'}])
-  [{'commands': [{'exec_time': datetime.datetime(2013, 12, 23, 0, 0), 'command': u'start_heating.py'}, {'exec_time': datetime.datetime(2013, 12, 23, 1, 0), 'command': u'0: turn_music_on.py'}, {'exec_time': datetime.datetime(2013, 12, 23, 1, 30), 'command': u'stop_heating.py'}], 'uid': u'olbia2urfm1ns0h88v4u0d9a5g'}]
+  >>> parse_events([{u'status': u'confirmed', u'updated': u'2013-12-22T19:49:13.750Z', u'end': {u'dateTime': u'2113-12-23T02:00:00+01:00'}, u'description': u'-60: start_heating.py\\n0: turn_music_on.py\\n+30: stop_heating.py', u'summary': u'Wakeup', u'start': {u'dateTime': u'2113-12-23T01:00:00+01:00'}, u'id': u'olbia2urfm1ns0h88v4u0d9a5g'}])
+  [{'commands': [{'exec_time': datetime.datetime(2113, 12, 23, 0, 0), 'command': u'start_heating.py'}, {'exec_time': datetime.datetime(2113, 12, 23, 1, 0), 'command': u'0: turn_music_on.py'}, {'exec_time': datetime.datetime(2113, 12, 23, 1, 30), 'command': u'stop_heating.py'}], 'uid': u'olbia2urfm1ns0h88v4u0d9a5g'}]
 
   >>> parse_events([{u'status': u'cancelled', u'updated': u'2013-12-22T19:52:50.525Z', u'end': {u'dateTime': u'2013-12-23T02:00:00+01:00'}, u'description': u'-60: start_heating.py\\n0: turn_music_on.py\\n+30: stop_heating.py', u'summary': u'Wakeup', u'start': {u'dateTime': u'2013-12-23T01:00:00+01:00'}, u'id': u'olbia2urfm1ns0h88v4u0d9a5g'}])
   [{'uid': u'olbia2urfm1ns0h88v4u0d9a5g'}]
@@ -424,3 +426,4 @@ def main(argv):
 
 if __name__ == '__main__':
   main(sys.argv)
+
