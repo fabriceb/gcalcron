@@ -371,14 +371,17 @@ def parse_events(events):
   for event in events:
     start_time = dateutil.parser.parse(event['start']['dateTime']).replace(tzinfo=None)
     end_time   = dateutil.parser.parse(event['end']['dateTime']).replace(tzinfo=None)
-    logger.debug(event['id'] + '-' + event['status'] + '-' + event['updated'] + ': ' + unicode(start_time) + ' -> ' + unicode(end_time) + ' (' + event['start']['dateTime'] + ' -> ' + event['end']['dateTime'] + ') ' + '=>' + event['description'])
+    event_description = ''
+    if 'description' in event:
+      event_description = event['description']
+    logger.debug(event['id'] + '-' + event['status'] + '-' + event['updated'] + ': ' + unicode(start_time) + ' -> ' + unicode(end_time) + ' (' + event['start']['dateTime'] + ' -> ' + event['end']['dateTime'] + ') ' + '=>' + event_description)
     if event['status'] == 'cancelled':
       logger.info("cancelled " + event['id'])
       commandsList.append({
         'uid': event['id']
       })
-    elif event['description']:
-      commands = parse_commands(event['description'], start_time, end_time)
+    elif event_description:
+      commands = parse_commands(event_description, start_time, end_time)
       if commands:
         commandsList.append({
             'uid': event['id'],
