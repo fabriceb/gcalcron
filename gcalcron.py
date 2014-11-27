@@ -60,7 +60,9 @@ class GCalAdapter:
 
   def __init__(self, calendarId=None, flags=None):
     self.calendarId = calendarId
+    self.flags = flags
     self.service = None
+
 
   def get_service(self):
     if not self.service:
@@ -80,7 +82,7 @@ class GCalAdapter:
             ],
           message=tools.message_if_missing(self.CLIENT_SECRETS))
 
-        credentials = tools.run_flow(FLOW, storage, flags)
+        credentials = tools.run_flow(FLOW, storage, self.flags)
 
 
       # Create an httplib2.Http object to handle our HTTP requests and authorize it
