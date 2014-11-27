@@ -59,6 +59,8 @@ python gcalcron.py
 
 The first time it runs, it will need a client_secrets.json file. To get one, go to https://cloud.google.com/console#/project, create a new project and give it access to the Google Calendar API
 
+If you havent already activated the consent screen in your console go to >API's & auth> Consent Screen. Ensure to select your email address at the top and give the product a name.
+
 Then go in the APIs & auth > Credentials menu and hit the "Download JSON" in the OAuth "Client ID for native application" section. This will get you a file that you need to move inside the gcalcron folder and rename client_secrets.json
 
 It will also need the id of the Google Calendar you intend to use for tasks scheduling.
