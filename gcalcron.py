@@ -112,7 +112,6 @@ class GCalAdapter:
       'calendarId': self.calendarId,
       'maxResults': 1000,
       'orderBy': 'updated',
-      'showDeleted': True,
       'singleEvents': True,
       'fields': 'items(description,end,id,start,status,summary,updated)',
       'timeMin': start_min.isoformat(),
@@ -121,6 +120,8 @@ class GCalAdapter:
 
     if updated_min:
       query['updatedMin'] = updated_min.isoformat()
+      # we want to know if planned events have been deleted since
+      query['showDeleted'] = True
 
     return query
 
@@ -163,7 +164,7 @@ class GCalAdapter:
     if last_sync:
       # query all events modified since last synchronisation
       queries.append(self.get_query(sync_start, last_sync + num_days, last_sync))
-      # query all events which appeared in the [last_sync + num_days, sync_start + num_days] time frame 
+      # query all events which appeared in the [last_sync + num_days, sync_start + num_days] time frame
       queries.append(self.get_query(last_sync + num_days, end))
     else:
       queries.append(self.get_query(sync_start, end))
@@ -432,4 +433,3 @@ def main(argv):
 
 if __name__ == '__main__':
   main(sys.argv)
-
